@@ -1,4 +1,5 @@
-﻿using System;
+﻿using StardewModdingAPI;
+using System;
 
 namespace LVCMod
 {
@@ -9,6 +10,10 @@ namespace LVCMod
         public string MainVoiceChatName { get; set; } = "Talk";
 
         public string VoiceChatsCategoryName { get; set; } = "Stardew Valley LVC";
+
+        public bool IsWarpActive { get; set; } = true;
+
+        public SButton ChangeWarpState { get; set; } = SButton.L;
 
         public bool DeleteVoiceChats { get; set; } = true;
     }

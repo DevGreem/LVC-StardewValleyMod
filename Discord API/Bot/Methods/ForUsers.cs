@@ -14,12 +14,13 @@ namespace LVCMod
         /// <summary>
         /// Move a Farmer to a voice chat
         /// </summary>
-        /// <param name="playerId">Discord User Id</param>
+        /// <param name="playerId">Farmer Id</param>
         /// <param name="newLocation">New Location of the User</param>
         /// <returns>Task</returns>
         public async Task MoveToVoice(long playerId, string newLocation)
         {
-            _ = MoveToVoice(GetDiscordFarmerId(playerId), MergeLocations(newLocation));
+            newLocation = MergeLocations(newLocation);
+            _ = MoveToVoice(GetDiscordFarmerId(playerId), newLocation);
         }
 
         private static string MergeLocations(string currentLocation) {

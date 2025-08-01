@@ -4,6 +4,9 @@ using GenericModConfigMenu;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
+using Discord.Rest;
+using Discord.WebSocket;
+using Discord;
 
 namespace LVCMod
 {
@@ -103,6 +106,9 @@ namespace LVCMod
 
             if (e.Type == (MessageType)MessageTypes.PlayerWarped)
             {
+                if (!Config.Bot.IsWarpActive)
+                    return;
+
                 var data = e.ReadAs<(long PlayerId, string NewLocation)>();
 
                 _ = HostBot.MoveToVoice(data.PlayerId, data.NewLocation);
@@ -147,6 +153,9 @@ namespace LVCMod
         {
             if (Context.IsMainPlayer)
             {
+                if (!Config.Bot.IsWarpActive)
+                    return;
+
                 _ = HostBot.MoveToVoice(e.Player.UniqueMultiplayerID, e.NewLocation.Name);
                 return;
             }
@@ -193,6 +202,26 @@ namespace LVCMod
                 SendMessageToMain(userInfo, MessageTypes.ChangePlayerDeaferState);
 
                 return;
+            }
+
+            if(e.Button == Config.Bot.ChangeWarpState) {
+                if (!Context.IsMainPlayer)
+                    return;
+
+                Config.Bot.IsWarpActive  = !Config.Bot.IsWarpActive;
+                List<long> players = Config.Host.SavesData[Game1.uniqueIDForThisGame].Players.Keys.ToList();
+
+                if (Config.Bot.IsWarpActive) {
+                    foreach (var player in players) {
+                        Farmer? farmer = Game1.GetPlayer(player);
+                        string farmerLocation = farmer == default ? Config.Bot.MainVoiceChatName : farmer.currentLocation.Name;
+                        _ = HostBot.MoveToVoice(player, farmerLocation);
+                    }
+                } else {
+                    foreach (var player in players) {
+                        _ = HostBot.MoveToVoice(player, Config.Bot.MainVoiceChatName);
+                    }
+                }
             }
         }
 
