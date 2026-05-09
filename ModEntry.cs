@@ -62,10 +62,13 @@ namespace LVCMod
                 await HostBot.WaitForReady();
 
                 ulong saveId = Game1.uniqueIDForThisGame;
-
                 Config.Host.SavesData.TryAdd(saveId, new PlayerData());
 
-                Config.Host.SavesData[saveId].Players[Game1.MasterPlayer.UniqueMultiplayerID] = Config.User.DiscordId;
+                Config.Host.SavesData[saveId].Players[Game1.MasterPlayer.UniqueMultiplayerID] = new FarmerInfo
+                {
+                    DiscordId = Config.User.DiscordId,
+                    Team = Config.User.Team // UserConfig'e eklediğimiz Team bilgisini de buraya koyuyoruz
+                };
 
                 _ = HostBot.ChangeBothUserStates(
                     Game1.MasterPlayer.UniqueMultiplayerID,
@@ -92,13 +95,15 @@ namespace LVCMod
             {
                 ModConfig clientConfig = e.ReadAs<ModConfig>();
 
-                Config.Host.SavesData[Game1.uniqueIDForThisGame].Players[e.FromPlayerID] = clientConfig.User.DiscordId;
+                // Yeni yapıya göre kaydet
+                Config.Host.SavesData[Game1.uniqueIDForThisGame].Players[e.FromPlayerID] = new FarmerInfo
+                {
+                    DiscordId = clientConfig.User.DiscordId,
+                    Team = clientConfig.User.Team
+                };
 
-                _ = HostBot.ChangeMuteUserState(clientConfig.User.DiscordId, clientConfig.User.MicrophoneActivated);
-
+                Monitor.Log($"[LVC] {e.FromPlayerID} katıldı. Takım: {clientConfig.User.Team}", LogLevel.Info);
                 SaveConfig();
-
-                return;
             }
 
             if (e.Type == (MessageType)MessageTypes.PlayerWarped)
@@ -112,18 +117,18 @@ namespace LVCMod
 
             if (e.Type == (MessageType)MessageTypes.ChangePlayerMicrophoneState)
             {
-                var playerInfo = e.ReadAs<(long Id, bool State)>();
+                //var playerInfo = e.ReadAs<(long Id, bool State)>();
 
-                _ = HostBot.ChangeMuteUserState(playerInfo.Id, playerInfo.State);
+                //_ = HostBot.ChangeMuteUserState(playerInfo.Id, playerInfo.State);
 
                 return;
             }
 
             if (e.Type == (MessageType)MessageTypes.ChangePlayerDeaferState)
             {
-                var playerInfo = e.ReadAs<(long Id, bool State)>();
+                //var playerInfo = e.ReadAs<(long Id, bool State)>();
 
-                _ = HostBot.ChangeDeaferUserState(playerInfo.Id, playerInfo.State);
+                //_ = HostBot.ChangeDeaferUserState(playerInfo.Id, playerInfo.State);
 
                 return;
             }

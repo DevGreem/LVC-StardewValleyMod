@@ -1,5 +1,6 @@
 ﻿using Discord.Rest;
 using Discord.WebSocket;
+using StardewModdingAPI;
 using StardewValley;
 using System;
 using System.Collections.Generic;
@@ -11,63 +12,99 @@ namespace LVCMod
 {
     partial class Bot
     {
+        public async Task MoveToVoice(long playerId, string newLocation)
+        {
+            ulong discordId = GetDiscordFarmerId(playerId);
+            string team = GetFarmerTeam(playerId); // Oyuncunun takımını merkezi veriden al
+
+            if (discordId == 0)
+            {
+                Mod.Monitor.Log($"[LVC] HATA: {playerId} için Discord ID bulunamadı.", LogLevel.Error);
+                return;
+            }
+
+            string mergedLocation = MergeLocations(newLocation, team);
+            Mod.Monitor.Log($"[LVC] Taşıma: Oyuncu={playerId}, Takım={team}, Hedef={mergedLocation}", LogLevel.Info);
+
+            await MoveToVoice(discordId, mergedLocation);
+        }
+
         /// <summary>
         /// Move a Farmer to a voice chat
         /// </summary>
         /// <param name="playerId">Discord User Id</param>
         /// <param name="newLocation">New Location of the User</param>
         /// <returns>Task</returns>
-        public async Task MoveToVoice(long playerId, string newLocation)
+        public async Task MoveToVoice(ulong discordId, string? newLocation)
         {
-            _ = MoveToVoice(GetDiscordFarmerId(playerId), MergeLocations(newLocation));
-        }
+            if (string.IsNullOrEmpty(newLocation)) return;
 
-        private static string MergeLocations(string currentLocation) {
-            if (currentLocation.Contains("UndergroundMine")) {
-                return currentLocation.Substring(0, currentLocation.Length - 1);
-            } else if (currentLocation == "FarmHouse") {
-                return "Cabin";
+            SocketGuildUser? user = Guild.GetUser(discordId);
+            // 1. Kullanıcı seste değilse zaten dokunma
+            if (user?.VoiceChannel is null) return;
+
+            // 2. KRİTİK KONTROL: Kullanıcının şu an bulunduğu kanal, bizim config'deki kayıtlı ID'lerden biri mi?
+            // Eğer oyuncunun bulunduğu kanalın ID'si, bizim LocationChannels listemizde yoksa ve Ana Kanal ID'si de değilse, bot karışmasın.
+            bool isUserInModChannel = Mod.Config.Host.LocationChannels.Values.Contains(user.VoiceChannel.Id)
+                                      || user.VoiceChannel.Id == Mod.Config.Bot.MainVoiceChatId;
+
+            if (!isUserInModChannel)
+            {
+                return;
             }
 
-            return currentLocation;
-        }
-
-        public async Task MoveToVoice(ulong playerId, string? newLocation)
-        {
-            SocketGuildUser? user = Guild.GetUser(playerId);
-
-            if (user is null)
-                return;
-
-            if (user.VoiceChannel is null)
-                return;
+            // 3. Eğer zaten gitmek istediği kanaldaysa yine dokunma
+            if (user.VoiceChannel.Name == newLocation) return;
 
             SocketVoiceChannel? voiceChannel = GetVoiceChannelByName(newLocation);
 
             if (voiceChannel is null)
             {
-                RestVoiceChannel channelId = await CreateVoiceChannel(newLocation);
+                Mod.Monitor.Log($"[LVC] '{newLocation}' kanalı henüz yok, oluşturuluyor...", StardewModdingAPI.LogLevel.Info);
+                var restChannel = await CreateVoiceChannel(newLocation);
 
-                voiceChannel = Guild.GetVoiceChannel(channelId.Id);
+                // ID'yi hemen kaydet
+                Mod.Config.Host.LocationChannels[newLocation] = restChannel.Id;
+                Mod.Helper.WriteConfig(Mod.Config);
+
+                // KRİTİK DÜZELTME: Discord'un kanalı tanıması için kısa bir süre bekle 
+                // ve kanal objesini tazeleyerek al.
+                await Task.Delay(1000);
+                voiceChannel = Guild.GetVoiceChannel(restChannel.Id);
+
+                if (voiceChannel == null)
+                {
+                    Mod.Monitor.Log($"[LVC] Kanal oluşturuldu ama Discord henüz hazır değil, bir sonraki warp bekleniyor.", StardewModdingAPI.LogLevel.Warn);
+                    return;
+                }
             }
 
-            SocketVoiceChannel previousVoiceChannel = user.VoiceChannel;
-
-            await user.ModifyAsync(x => x.Channel = voiceChannel);
-
-            if (previousVoiceChannel is null)
-                return;
-
-            await DeleteVoiceChannel(
-                previousVoiceChannel.Name,
-                () =>
+            if (voiceChannel != null && user.VoiceChannel.Id != voiceChannel.Id)
+            {
+                try
                 {
-                    if (previousVoiceChannel.Users.Count == 0)
-                        return true;
-
-                    return false;
+                    // Discord API'yi rahatlatmak için çok kısa bir bekleme
+                    await Task.Delay(250);
+                    await user.ModifyAsync(x => x.Channel = voiceChannel);
+                    Mod.Monitor.Log($"[LVC] BAŞARILI: {user.Username} -> {newLocation} kanalına taşındı.", StardewModdingAPI.LogLevel.Info);
                 }
-            );
+                catch (Exception ex)
+                {
+                    Mod.Monitor.Log($"[LVC] KRİTİK HATA: {user.Username} taşınırken Discord API hata döndürdü: {ex.Message}", StardewModdingAPI.LogLevel.Warn);
+                }
+            }
+        }
+
+        private static string MergeLocations(string currentLocation, string teamName)
+        {
+            if (currentLocation.Contains("UndergroundMine"))
+                return "Mine";
+                //return currentLocation.Substring(0, currentLocation.Length - 1);
+
+            if (currentLocation == "FarmHouse" || currentLocation == "Cabin")
+                return $"{teamName} Cabin";
+
+            return currentLocation;
         }
 
         /// <summary>
@@ -239,10 +276,12 @@ namespace LVCMod
 
         public async Task ResetUsersState()
         {
-            foreach (KeyValuePair<long, ulong> playerInfo in Mod.Config.Host.SavesData[Game1.uniqueIDForThisGame].Players)
+            // HATA BURADAYDI: playerInfo.Value artık ulong değil, FarmerInfo nesnesi.
+            foreach (var playerInfo in Mod.Config.Host.SavesData[Game1.uniqueIDForThisGame].Players)
             {
-                _ = UnmuteUser(playerInfo.Value);
-                _ = UndeafUser(playerInfo.Value);
+                // Discord ID'sine .DiscordId diyerek erişiyoruz
+                _ = UnmuteUser(playerInfo.Value.DiscordId);
+                _ = UndeafUser(playerInfo.Value.DiscordId);
             }
         }
     }

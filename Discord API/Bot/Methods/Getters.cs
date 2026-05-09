@@ -17,8 +17,22 @@ namespace LVCMod
         /// <returns>ulong</returns>
         private ulong GetDiscordFarmerId(long farmerId)
         {
-            return Mod.Config.Host.SavesData[Game1.uniqueIDForThisGame]
-                .Players[farmerId];
+            if (Mod.Config.Host.SavesData.TryGetValue(Game1.uniqueIDForThisGame, out var data))
+            {
+                if (data.Players.TryGetValue(farmerId, out var info))
+                    return info.DiscordId;
+            }
+            return 0;
+        }
+
+        private string GetFarmerTeam(long farmerId)
+        {
+            if (Mod.Config.Host.SavesData.TryGetValue(Game1.uniqueIDForThisGame, out var data))
+            {
+                if (data.Players.TryGetValue(farmerId, out var info))
+                    return info.Team;
+            }
+            return "Blue"; // Veri yoksa varsayılan
         }
 
         /// <summary>
@@ -28,8 +42,28 @@ namespace LVCMod
         /// <returns>SocketVoiceChannel</returns>
         private SocketVoiceChannel? GetVoiceChannelByName(string channelName)
         {
-            return Guild.VoiceChannels
-                .Where(c => c.Name == channelName).FirstOrDefault();
+            // 1. Önce hafızadaki (cache) sözlüğe bak
+            if (Mod.Config.Host.LocationChannels.TryGetValue(channelName, out ulong id))
+            {
+                var ch = Guild.GetVoiceChannel(id);
+                if (ch != null) return ch;
+            }
+
+            // 2. Bulamazsa isme göre ara
+            var foundChannel = Guild.VoiceChannels.FirstOrDefault(c => c.Name == channelName);
+
+            if (foundChannel != null)
+            {
+                // 3. SADECE eğer sözlükte bu isim yoksa veya ID farklıysa kaydet
+                if (!Mod.Config.Host.LocationChannels.ContainsKey(channelName) || Mod.Config.Host.LocationChannels[channelName] != foundChannel.Id)
+                {
+                    Mod.Config.Host.LocationChannels[channelName] = foundChannel.Id;
+                    Mod.Helper.WriteConfig(Mod.Config);
+                    Mod.Monitor.Log($"[LVC] '{channelName}' kanalı sisteme yeni ID ({foundChannel.Id}) ile tanımlandı.", StardewModdingAPI.LogLevel.Info);
+                }
+            }
+
+            return foundChannel;
         }
 
         /// <summary>
@@ -39,8 +73,12 @@ namespace LVCMod
         /// <returns>SocketCategoryChannel</returns>
         private SocketCategoryChannel? GetCategoryByName(string categoryName)
         {
-            return Guild.CategoryChannels
-                .Where(c => c.Name == categoryName).FirstOrDefault();
+            if (Mod.Config.Bot.VoiceChatsCategoryId != 0)
+            {
+                var cat = Guild.GetCategoryChannel(Mod.Config.Bot.VoiceChatsCategoryId);
+                if (cat != null) return cat;
+            }
+            return Guild.CategoryChannels.FirstOrDefault(c => c.Name == categoryName);
         }
     }
 }

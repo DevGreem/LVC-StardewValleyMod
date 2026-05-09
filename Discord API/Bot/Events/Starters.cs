@@ -23,17 +23,31 @@ namespace LVCMod
         {
             Guild = DiscordClient.GetGuild(Mod.Config.Host.DiscordGuildId);
 
-            if (GetCategoryByName(Mod.Config.Bot.VoiceChatsCategoryName) is null)
-                await CreateVoiceChatsCategory();
+            var category = GetCategoryByName(Mod.Config.Bot.VoiceChatsCategoryName);
+            if (category is null)
+            {
+                var newCat = await CreateVoiceChatsCategory();
+                Mod.Config.Bot.VoiceChatsCategoryId = newCat.Id;
+            }
+            else
+            {
+                Mod.Config.Bot.VoiceChatsCategoryId = category.Id;
+            }
 
-            if (GetVoiceChannelByName(Mod.Config.Bot.MainVoiceChatName) is null)
-                await CreateVoiceChannel(Mod.Config.Bot.MainVoiceChatName, false);
+            var mainChannel = GetVoiceChannelByName(Mod.Config.Bot.MainVoiceChatName);
+            if (mainChannel is null)
+            {
+                var newChan = await CreateVoiceChannel(Mod.Config.Bot.MainVoiceChatName, false);
+                Mod.Config.Bot.MainVoiceChatId = newChan.Id;
+            }
+            else
+            {
+                Mod.Config.Bot.MainVoiceChatId = mainChannel.Id;
+            }
 
+            Mod.Helper.WriteConfig(Mod.Config);
             await DiscordClient.SetCustomStatusAsync("Managing conversations");
-
             IsBotReady.SetResult(true);
-
-            Debug.WriteLine($"{Mod.ModManifest.UniqueID}, {DiscordClient.ConnectionState}, {Guild.Id}, {IsBotReady}");
         }
 
         public async Task WaitForReady()

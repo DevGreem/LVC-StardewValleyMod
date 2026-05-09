@@ -16,5 +16,9 @@
   "deafer.label": "Ensordecimiento desactivado",
   "controls.title": "Controles",
   "microphone-state.label": "Cambiar estado del microfono",
-  "deafer-state.label": "Cambiar estado del ensordecedor"
+  "deafer-state.label": "Cambiar estado del ensordecedor",
+  "team-selection.label": "Selección de equipo",
+  "team-selection.tooltip": "¿A qué equipo quieres unirte?",
+  "main-voice-chat-id.label": "ID del canal de voz principal",
+  "main-voice-chat-category-id.label": "ID de la categoría del canal de voz principal"
 }

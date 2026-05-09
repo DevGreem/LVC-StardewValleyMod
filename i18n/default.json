@@ -16,5 +16,9 @@
   "deafer.label": "Deafer Desactivated",
   "controls.title": "Controls",
   "microphone-state.label": "Change Microphone State",
-  "deafer-state.label": "Change Deafer State"
+  "deafer-state.label": "Change Deafer State",
+  "team-selection.label": "Team Selection",
+  "team-selection.tooltip": "Which team do you want to join?",
+  "main-voice-chat-id.label": "Main Voice Chat ID",
+  "main-voice-chat-category-id.label": "Main Voice Chat Category ID"
 }

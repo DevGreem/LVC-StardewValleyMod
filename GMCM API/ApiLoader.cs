@@ -1,6 +1,7 @@
 ﻿using GenericModConfigMenu;
 using StardewModdingAPI.Events;
 using StardewModdingAPI;
+using System;
 
 namespace LVCMod
 {
@@ -29,36 +30,49 @@ namespace LVCMod
                 true
             );
 
+            // --- KULLANICI AYARLARI ---
             GCMApi.AddSectionTitle(
                 ModManifest,
                 text: () => Helper.Translation.Get("user.gmcm.title")
             );
 
+            // Discord ID
             GCMApi.AddTextOption(
                 ModManifest,
                 name: () => "Discord ID",
                 getValue: () => Config.User.DiscordId.ToString(),
                 setValue: value =>
                 {
-                    ulong newValue;
-
-                    try
-                    {
-                        newValue = ulong.Parse(value);
-                    }
-                    catch
-                    {
-                        newValue = 0;
-                    }
-
-                    Config.User.DiscordId = newValue;
+                    if (ulong.TryParse(value, out ulong id))
+                        Config.User.DiscordId = id;
+                    else
+                        Config.User.DiscordId = 0;
                 },
                 tooltip: () => Config.User.DiscordId.ToString()
             );
 
-            GCMApi.AddSectionTitle(
+            // TAKIM SEÇİMİ
+            GCMApi.AddTextOption(
                 ModManifest,
-                text: () => Helper.Translation.Get("host.gmcm.title")
+                name: () => Helper.Translation.Get("team-selection.label"),
+                tooltip: () => Helper.Translation.Get("team-selection.tooltip"),
+                getValue: () => Config.User.Team,
+                setValue: value => Config.User.Team = value,
+                allowedValues: new string[] { "Blue", "Red", "Green", "Yellow" }
+            );
+
+            GCMApi.AddPageLink(
+                ModManifest,
+                pageId: "bot",
+                text: () => Helper.Translation.Get("host.gmcm.title"),
+                tooltip : () => Helper.Translation.Get("bot.gmcm.title")
+            );
+
+            // --- BOT AYARLARI ---
+            GCMApi.AddPage(
+                ModManifest,
+                pageId: "bot",
+                pageTitle: () => Helper.Translation.Get("host.gmcm.title")
             );
 
             GCMApi.AddTextOption(
@@ -67,25 +81,12 @@ namespace LVCMod
                 getValue: () => Config.Host.DiscordGuildId.ToString(),
                 setValue: value =>
                 {
-                    ulong newValue;
-
-                    try
-                    {
-                        newValue = ulong.Parse(value);
-                    }
-                    catch
-                    {
-                        newValue = 0;
-                    }
-
-                    Config.Host.DiscordGuildId = newValue;
+                    if (ulong.TryParse(value, out ulong id))
+                        Config.Host.DiscordGuildId = id;
+                    else
+                        Config.Host.DiscordGuildId = 0;
                 },
                 tooltip: () => Config.Host.DiscordGuildId.ToString()
-            );
-
-            GCMApi.AddSectionTitle(
-                ModManifest,
-                text: () => Helper.Translation.Get("bot.gmcm.title")
             );
 
             GCMApi.AddTextOption(
@@ -93,23 +94,49 @@ namespace LVCMod
                 name: () => Helper.Translation.Get("host-bot-token.label"),
                 getValue: () => Config.Bot.Token,
                 setValue: value => Config.Bot.Token = value,
-                tooltip: () => Config.Bot.Token
+                tooltip: () => "Discord Bot Token"
             );
 
             GCMApi.AddTextOption(
                 ModManifest,
                 name: () => Helper.Translation.Get("main-voice-chat.label"),
                 getValue: () => Config.Bot.MainVoiceChatName,
-                setValue: value => Config.Bot.MainVoiceChatName = value,
-                tooltip: () => Config.Bot.MainVoiceChatName
+                setValue: value => Config.Bot.MainVoiceChatName = value
+            );
+
+            GCMApi.AddTextOption(
+                ModManifest,
+                name: () => Helper.Translation.Get("main-voice-chat-id.label"),
+                getValue: () => Config.User.DiscordId.ToString(),
+                setValue: value =>
+                {
+                    if (ulong.TryParse(value, out ulong id))
+                        Config.Bot.MainVoiceChatId = id;
+                    else
+                        Config.Bot.MainVoiceChatId = 0;
+                },
+                tooltip: () => Config.User.DiscordId.ToString()
             );
 
             GCMApi.AddTextOption(
                 ModManifest,
                 name: () => Helper.Translation.Get("main-voice-chat-category.label"),
                 getValue: () => Config.Bot.VoiceChatsCategoryName,
-                setValue: value => Config.Bot.VoiceChatsCategoryName = value,
-                tooltip: () => Config.Bot.VoiceChatsCategoryName
+                setValue: value => Config.Bot.VoiceChatsCategoryName = value
+            );
+
+            GCMApi.AddTextOption(
+                ModManifest,
+                name: () => Helper.Translation.Get("main-voice-chat-category-id.label"),
+                getValue: () => Config.User.DiscordId.ToString(),
+                setValue: value =>
+                {
+                    if (ulong.TryParse(value, out ulong id))
+                        Config.Bot.VoiceChatsCategoryId = id;
+                    else
+                        Config.Bot.VoiceChatsCategoryId = 0;
+                },
+                tooltip: () => Config.User.DiscordId.ToString()
             );
 
             GCMApi.AddBoolOption(
@@ -119,43 +146,45 @@ namespace LVCMod
                 setValue: value => Config.Bot.DeleteVoiceChats = value
             );
 
-            GCMApi.AddSectionTitle(
-                ModManifest,
-                text: () => Helper.Translation.Get("voice-chat.gmcm.title")
-            );
+            // --- SES AYARLARI ---
+            //GCMApi.AddSectionTitle(
+            //    ModManifest,
+            //    text: () => Helper.Translation.Get("voice-chat.gmcm.title")
+            //);
 
-            GCMApi.AddBoolOption(
-                ModManifest,
-                name: () => Helper.Translation.Get("microphone.label"),
-                getValue: () => Config.User.MicrophoneActivated,
-                setValue: value => Config.User.MicrophoneActivated = value
-            );
+            //GCMApi.AddBoolOption(
+            //    ModManifest,
+            //    name: () => Helper.Translation.Get("microphone.label"),
+            //    getValue: () => Config.User.MicrophoneActivated,
+            //    setValue: value => Config.User.MicrophoneActivated = value
+            //);
 
-            GCMApi.AddBoolOption(
-                ModManifest,
-                name: () => Helper.Translation.Get("deafer.label"),
-                getValue: () => Config.User.DeaferDesactivated,
-                setValue: value => Config.User.DeaferDesactivated = value
-            );
+            //GCMApi.AddBoolOption(
+            //    ModManifest,
+            //    name: () => Helper.Translation.Get("deafer.label"),
+            //    getValue: () => Config.User.DeaferDesactivated,
+            //    setValue: value => Config.User.DeaferDesactivated = value
+            //);
 
-            GCMApi.AddSectionTitle(
-                ModManifest,
-                text: () => Helper.Translation.Get("controls.title")
-            );
+            // --- KONTROLLER ---
+            //GCMApi.AddSectionTitle(
+            //    ModManifest,
+            //    text: () => Helper.Translation.Get("controls.title")
+            //);
 
-            GCMApi.AddKeybind(
-                ModManifest,
-                name: () => Helper.Translation.Get("microphone-state.label"),
-                getValue: () => Config.User.ChangeStateMicrophone,
-                setValue: value => Config.User.ChangeStateMicrophone = value
-            );
+            //GCMApi.AddKeybind(
+            //    ModManifest,
+            //    name: () => Helper.Translation.Get("microphone-state.label"),
+            //    getValue: () => Config.User.ChangeStateMicrophone,
+            //    setValue: value => Config.User.ChangeStateMicrophone = value
+            //);
 
-            GCMApi.AddKeybind(
-                ModManifest,
-                name: () => Helper.Translation.Get("deafer-state.label"),
-                getValue: () => Config.User.ChangeStateAudio,
-                setValue: value => Config.User.ChangeStateAudio = value
-            );
+            //GCMApi.AddKeybind(
+            //    ModManifest,
+            //    name: () => Helper.Translation.Get("deafer-state.label"),
+            //    getValue: () => Config.User.ChangeStateAudio,
+            //    setValue: value => Config.User.ChangeStateAudio = value
+            //);
         }
     }
 }
