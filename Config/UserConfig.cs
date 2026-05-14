@@ -7,14 +7,16 @@ namespace LVCMod
     {
         public ulong DiscordId { get; set; } = 0;
 
-        public string Team { get; set; } = "Blue"; // Blue, Red, Green, Yellow
+        public string Team { get; set; } = "None"; // None, Blue, Red, Green, Yellow
 
-        public bool MicrophoneActivated { get; set; } = true;
+        public bool Muted { get; set; } = true;
 
-        public bool DeaferDesactivated { get; set; } = true;
+        public bool Deafen { get; set; } = true;
 
-        public SButton ChangeStateMicrophone { get; set; } = SButton.H;
+        public bool EnableVoiceHotkeys { get; set; } = true;
 
-        public SButton ChangeStateAudio { get; set; } = SButton.J;
+        public SButton ChangeStateMute { get; set; } = SButton.H;
+
+        public SButton ChangeStateDeaf { get; set; } = SButton.J;
     }
 }

@@ -10,6 +10,12 @@ namespace LVCMod
         [Description("PlayerWarped")]
         PlayerWarped,
 
+        [Description("PlayerWarpedWithChannel")]
+        PlayerWarpedWithChannel,
+
+        [Description("LocationChannelsSynced")]
+        LocationChannelsSynced,
+
         [Description("ChangePlayerMicrophoneState")]
         ChangePlayerMicrophoneState,
 

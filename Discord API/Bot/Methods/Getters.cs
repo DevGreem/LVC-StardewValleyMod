@@ -32,7 +32,7 @@ namespace LVCMod
                 if (data.Players.TryGetValue(farmerId, out var info))
                     return info.Team;
             }
-            return "Blue"; // Veri yoksa varsayılan
+            return "None";
         }
 
         /// <summary>
@@ -42,24 +42,25 @@ namespace LVCMod
         /// <returns>SocketVoiceChannel</returns>
         private SocketVoiceChannel? GetVoiceChannelByName(string channelName)
         {
-            // 1. Önce hafızadaki (cache) sözlüğe bak
+            // look at the dictionary in the cache
             if (Mod.Config.Host.LocationChannels.TryGetValue(channelName, out ulong id))
             {
                 var ch = Guild.GetVoiceChannel(id);
                 if (ch != null) return ch;
             }
 
-            // 2. Bulamazsa isme göre ara
+            // If not found, search by name
             var foundChannel = Guild.VoiceChannels.FirstOrDefault(c => c.Name == channelName);
 
             if (foundChannel != null)
             {
-                // 3. SADECE eğer sözlükte bu isim yoksa veya ID farklıysa kaydet
+                // Save ONLY if this name is not in the dictionary or the ID is different
                 if (!Mod.Config.Host.LocationChannels.ContainsKey(channelName) || Mod.Config.Host.LocationChannels[channelName] != foundChannel.Id)
                 {
                     Mod.Config.Host.LocationChannels[channelName] = foundChannel.Id;
                     Mod.Helper.WriteConfig(Mod.Config);
-                    Mod.Monitor.Log($"[LVC] '{channelName}' kanalı sisteme yeni ID ({foundChannel.Id}) ile tanımlandı.", StardewModdingAPI.LogLevel.Info);
+                    Mod.BroadcastLocationChannels();
+                    Mod.Monitor.Log($"[LVC] {Mod.Helper.Translation.Get("log.info.channel-registered", new { channelName, channelId = foundChannel.Id })}", StardewModdingAPI.LogLevel.Info);
                 }
             }
 
@@ -67,7 +68,7 @@ namespace LVCMod
         }
 
         /// <summary>
-        /// Get a category by name 
+        /// Get a category by name
         /// </summary>
         /// <param name="categoryName">Category Name</param>
         /// <returns>SocketCategoryChannel</returns>

@@ -1,21 +1,24 @@
 {
   "User": {
     "DiscordId": 0,
-    "MicrophoneActivated": true,
-    "DeaferDesactivated": true,
-    "ChangeStateMicrophone": "H",
-    "ChangeStateAudio": "J"
-  },
-  "Host": {
-    "DiscordGuildId": 0,
-    "SavesData": {
-
-    }
+    "Team": "None",
+    "Muted": false,
+    "Deafen": false,
+    "EnableVoiceHotkeys": false,
+    "ChangeStateMute": "H",
+    "ChangeStateDeaf": "J"
   },
   "Bot": {
     "Token": "",
     "MainVoiceChatName": "Talk",
+    "MainVoiceChatId": 0,
     "VoiceChatsCategoryName": "Stardew Valley LVC",
-    "DeleteVoiceChat": true
+    "VoiceChatsCategoryId": 0,
+    "DeleteVoiceChats": true
+  },
+  "Host": {
+    "DiscordGuildId": 0,
+    "SavesData": {},
+    "LocationChannels": {}
   }
 }

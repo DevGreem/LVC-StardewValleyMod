@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using GenericModConfigMenu;
 using StardewModdingAPI;
@@ -25,6 +26,8 @@ namespace LVCMod
             if (!Context.IsMultiplayer)
                 return;
 
+            Monitor.Log($"[LVC] {Helper.Translation.Get("log.info.save-loaded", new { isMainPlayer = Context.IsMainPlayer, discordId = Config.User.DiscordId, tokenSet = !string.IsNullOrEmpty(Config.Bot.Token) })}", LogLevel.Info);
+
             if (Config.User.DiscordId == 0)
             {
                 Monitor.Log(
@@ -38,6 +41,8 @@ namespace LVCMod
 
             if (Context.IsMainPlayer)
             {
+                Monitor.Log($"[LVC] {Helper.Translation.Get("log.info.starting-bot")}", LogLevel.Info);
+
                 if (Config.Host.DiscordGuildId == 0)
                 {
                     Monitor.Log(
@@ -67,19 +72,16 @@ namespace LVCMod
                 Config.Host.SavesData[saveId].Players[Game1.MasterPlayer.UniqueMultiplayerID] = new FarmerInfo
                 {
                     DiscordId = Config.User.DiscordId,
-                    Team = Config.User.Team // UserConfig'e eklediğimiz Team bilgisini de buraya koyuyoruz
+                    Team = Config.User.Team
                 };
 
-                _ = HostBot.ChangeBothUserStates(
-                    Game1.MasterPlayer.UniqueMultiplayerID,
-                    Config.User.MicrophoneActivated,
-                    Config.User.DeaferDesactivated
-                );
+                _ = HostBot.ResetUsersState();
 
                 SaveConfig();
                 return;
             }
 
+            Monitor.Log($"[LVC] {Helper.Translation.Get("log.info.client-joining")}", LogLevel.Info);
             SendMessageToMain(Config, MessageTypes.PlayerJoined);
         }
 
@@ -88,6 +90,23 @@ namespace LVCMod
             if (e.FromModID != ModManifest.UniqueID)
                 return;
 
+            if (e.Type == (MessageType)MessageTypes.LocationChannelsSynced)
+            {
+                var channelMap = e.ReadAs<Dictionary<string, ulong>>();
+                if (channelMap != null)
+                {
+                    Monitor.Log($"[LVC] {Helper.Translation.Get("log.info.location-channels-received", new { count = channelMap.Count })}", LogLevel.Info);
+                    foreach (var mapping in channelMap)
+                    {
+                        Config.Host.LocationChannels[mapping.Key] = mapping.Value;
+                        Monitor.Log($"[LVC] {Helper.Translation.Get("log.info.channel-mapping", new { key = mapping.Key, value = mapping.Value })}", LogLevel.Info);
+                    }
+                    SaveConfig();
+                    Monitor.Log($"[LVC] {Helper.Translation.Get("log.info.config-saved")}", LogLevel.Info);
+                }
+                return;
+            }
+
             if (!Context.IsMainPlayer)
                 return;
 
@@ -95,16 +114,19 @@ namespace LVCMod
             {
                 ModConfig clientConfig = e.ReadAs<ModConfig>();
 
-                // Yeni yapıya göre kaydet
                 Config.Host.SavesData[Game1.uniqueIDForThisGame].Players[e.FromPlayerID] = new FarmerInfo
                 {
                     DiscordId = clientConfig.User.DiscordId,
                     Team = clientConfig.User.Team
                 };
 
-                Monitor.Log($"[LVC] {e.FromPlayerID} katıldı. Takım: {clientConfig.User.Team}", LogLevel.Info);
+                Monitor.Log($"[LVC] {Helper.Translation.Get("log.info.player-joined", new { playerId = e.FromPlayerID, team = clientConfig.User.Team })}", LogLevel.Info);
                 SaveConfig();
+
+                Monitor.Log($"[LVC] {Helper.Translation.Get("log.info.sending-channels", new { count = Config.Host.LocationChannels.Count, playerId = e.FromPlayerID })}", LogLevel.Info);
+                SendMessageToPlayer(Config.Host.LocationChannels, MessageTypes.LocationChannelsSynced, e.FromPlayerID);
             }
+
 
             if (e.Type == (MessageType)MessageTypes.PlayerWarped)
             {
@@ -115,20 +137,31 @@ namespace LVCMod
                 return;
             }
 
+            if (e.Type == (MessageType)MessageTypes.PlayerWarpedWithChannel)
+            {
+                var data = e.ReadAs<(ulong DiscordId, ulong ChannelId)>();
+
+                _ = HostBot.MoveToVoice(data.DiscordId, data.ChannelId);
+
+                return;
+            }
+
             if (e.Type == (MessageType)MessageTypes.ChangePlayerMicrophoneState)
             {
-                //var playerInfo = e.ReadAs<(long Id, bool State)>();
+                var playerInfo = e.ReadAs<(long Id, bool State)>();
+                Monitor.Log($"[LVC] {Helper.Translation.Get("log.info.microphone-state-change", new { playerId = playerInfo.Id, state = playerInfo.State })}", LogLevel.Info);
 
-                //_ = HostBot.ChangeMuteUserState(playerInfo.Id, playerInfo.State);
+                _ = HostBot.ChangeMuteUserState(playerInfo.Id, playerInfo.State);
 
                 return;
             }
 
             if (e.Type == (MessageType)MessageTypes.ChangePlayerDeaferState)
             {
-                //var playerInfo = e.ReadAs<(long Id, bool State)>();
+                var playerInfo = e.ReadAs<(long Id, bool State)>();
+                Monitor.Log($"[LVC] {Helper.Translation.Get("log.info.deafer-state-change", new { playerId = playerInfo.Id, state = playerInfo.State })}", LogLevel.Info);
 
-                //_ = HostBot.ChangeDeaferUserState(playerInfo.Id, playerInfo.State);
+                _ = HostBot.ChangeDeaferUserState(playerInfo.Id, playerInfo.State);
 
                 return;
             }
@@ -141,10 +174,13 @@ namespace LVCMod
             if (!Context.IsMainPlayer)
                 return;
 
+            await HostBot.ResetUsersState();
+
             if (Config.Bot.DeleteVoiceChats)
             {
-                await HostBot.ResetUsersState();
                 await HostBot.CloseVoiceChat();
+                Config.Host.LocationChannels.Clear();
+                SaveConfig();
             }
         }
 
@@ -156,20 +192,36 @@ namespace LVCMod
                 return;
             }
 
-            (long, string) message = (e.Player.UniqueMultiplayerID, e.NewLocation.Name);
+            string mergedLocation = MergeLocationWithTeam(e.NewLocation.Name, Config.User.Team);
+            Monitor.Log($"[LVC] {Helper.Translation.Get("log.info.warp-occurred", new { oldLocation = e.NewLocation.Name, mergedLocation, count = Config.Host.LocationChannels.Count })}", LogLevel.Info);
 
-            SendMessageToMain(message, MessageTypes.PlayerWarped);
+            if (Config.Host.LocationChannels.TryGetValue(mergedLocation, out ulong channelId) && channelId != 0)
+            {
+                (ulong DiscordId, ulong ChannelId) message = (Config.User.DiscordId, channelId);
+                Monitor.Log($"[LVC] {Helper.Translation.Get("log.info.channel-found", new { mergedLocation, channelId })}", LogLevel.Info);
+                SendMessageToMain(message, MessageTypes.PlayerWarpedWithChannel);
+                return;
+            }
+
+            Monitor.Log($"[LVC] {Helper.Translation.Get("log.warn.channel-id-missing", new { mergedLocation })}", LogLevel.Warn);
+            (long, string) fallbackMessage = (e.Player.UniqueMultiplayerID, mergedLocation);
+            SendMessageToMain(fallbackMessage, MessageTypes.PlayerWarped);
         }
 
         private async void OnButtonPressed(object? sender, ButtonPressedEventArgs e)
         {
-
-            if (e.Button == Config.User.ChangeStateMicrophone)
+            if (!Config.User.EnableVoiceHotkeys &&
+                (e.Button == Config.User.ChangeStateMute || e.Button == Config.User.ChangeStateDeaf))
             {
-                Config.User.MicrophoneActivated = !Config.User.MicrophoneActivated;
+                return;
+            }
+
+            if (e.Button == Config.User.ChangeStateMute)
+            {
+                Config.User.Muted = !Config.User.Muted;
                 SaveConfig();
 
-                (long Id, bool State) userInfo = (Game1.player.UniqueMultiplayerID, Config.User.MicrophoneActivated);
+                (long Id, bool State) userInfo = (Game1.player.UniqueMultiplayerID, Config.User.Muted);
 
                 if (Context.IsMainPlayer)
                 {
@@ -182,12 +234,12 @@ namespace LVCMod
                 return;
             }
 
-            if (e.Button == Config.User.ChangeStateAudio)
+            if (e.Button == Config.User.ChangeStateDeaf)
             {
-                Config.User.DeaferDesactivated = !Config.User.DeaferDesactivated;
+                Config.User.Deafen = !Config.User.Deafen;
                 SaveConfig();
 
-                (long Id, bool State) userInfo = (Game1.player.UniqueMultiplayerID, Config.User.DeaferDesactivated);
+                (long Id, bool State) userInfo = (Game1.player.UniqueMultiplayerID, Config.User.Deafen);
 
                 if (Context.IsMainPlayer)
                 {
@@ -213,6 +265,45 @@ namespace LVCMod
                 new[] { ModManifest.UniqueID },
                 new[] { Game1.MasterPlayer.UniqueMultiplayerID }
             );
+        }
+
+        private void SendMessageToPlayer<TMessage>(TMessage message, MessageType messageType, long playerId)
+        {
+            Helper.Multiplayer.SendMessage(
+                message,
+                messageType,
+                new[] { ModManifest.UniqueID },
+                new[] { playerId }
+            );
+        }
+
+        internal void BroadcastLocationChannels()
+        {
+            if (!Context.IsMainPlayer)
+                return;
+
+            Monitor.Log($"[LVC] {Helper.Translation.Get("log.info.broadcasting-location-channels", new { count = Config.Host.LocationChannels.Count })}", LogLevel.Info);
+            Helper.Multiplayer.SendMessage(
+                Config.Host.LocationChannels,
+                (MessageType)MessageTypes.LocationChannelsSynced,
+                new[] { ModManifest.UniqueID }
+            );
+        }
+
+        private static string MergeLocationWithTeam(string currentLocation, string teamName)
+        {
+            if (currentLocation.Contains("UndergroundMine"))
+                return "Mine";
+
+            if (currentLocation == "FarmHouse" || currentLocation == "Cabin")
+            {
+                if (teamName == "None")
+                    return "Cabin";
+
+                return $"{teamName} Cabin";
+            }
+
+            return currentLocation;
         }
 
         private void LoadEvents()
