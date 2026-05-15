@@ -9,9 +9,7 @@ namespace LVCMod
 
         public string Team { get; set; } = "None"; // None, Blue, Red, Green, Yellow
 
-        public bool Muted { get; set; } = true;
-
-        public bool Deafen { get; set; } = true;
+        // Muted and Deafen are now stored per-save in players.json
 
         public bool EnableVoiceHotkeys { get; set; } = true;
 

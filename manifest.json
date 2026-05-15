@@ -1,7 +1,7 @@
 {
   "Name": "LVC",
   "Author": "Greem",
-  "Version": "1.2.1",
+  "Version": "1.2.3",
   "Description": "This mod adds a voice chat based on each player's zone.",
   "UniqueID": "Greem.LVC",
   "EntryDll": "LVCMod.dll",

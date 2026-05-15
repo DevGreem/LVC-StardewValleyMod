@@ -52,6 +52,7 @@
   "log.error.guild-not-found": "ERROR: Guild not found. DiscordGuildId={{guildId}}",
   "log.error.move-all-attempts-failed": "CRITICAL: All move attempts failed for {{userName}}.",
   "log.error.mute-state-failed": "ERROR: Mute state change failed for {{playerId}}: {{reason}}",
+  "log.error.save-player-data-failed": "ERROR: Failed to save player data: {{reason}}",
 
   "log.info.bot-login-complete": "Discord bot login process completed.",
   "log.info.bot-ready": "Discord bot ready, getting guild and channels...",
@@ -85,9 +86,15 @@
   "log.info.user-already-in-channel": "Info: User already in channel {{channelId}}.",
   "log.info.warp-occurred": "Warp occurred: {{oldLocation}} -> {{mergedLocation}}. LocalChannels: {{count}}",
 
-  "log.warn.channel-id-zero": "WARNING: ChannelId is 0, no movement performed.",
   "log.warn.channel-id-missing": "WARNING: Channel ID not found for '{{mergedLocation}}'. Fallback to PlayerWarped.",
+  "log.warn.channel-id-zero": "WARNING: ChannelId is 0, no movement performed.",
   "log.warn.channel-not-ready": "Channel created but Discord isn't ready yet, waiting for next warp.",
+  "log.warn.delete-location-channels-failed": "WARNING: Failed to delete location channels save data: {{reason}}",
+  "log.warn.load-save-data-failed": "WARNING: Failed to load save data: {{reason}}",
   "log.warn.move-failed-retry": "ERROR (Attempt {{attempt}}/{{maxAttempts}}): {{userName}} failed to move, Discord API error: {{reason}}",
-  "log.warn.user-not-in-voice": "WARNING: User {{discordId}} is not in voice or not found."
+  "log.warn.persist-joined-player-data-failed": "WARNING: Failed to persist joined player data: {{reason}}",
+  "log.warn.persist-location-channel-mapping-failed": "WARNING: Failed to persist location channel mapping: {{reason}}",
+  "log.warn.reset-users-state-failed": "WARNING: Failed to reset users state from save data: {{reason}}",
+  "log.warn.user-not-in-voice": "WARNING: User {{discordId}} is not in voice or not found.",
+  "log.warn.write-location-channels-failed": "WARNING: Failed to write location channels to save data: {{reason}}"
 }

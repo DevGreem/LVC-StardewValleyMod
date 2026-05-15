@@ -38,16 +38,16 @@ namespace LVCMod
         /// <returns>Task</returns>
         private async Task OnReady()
         {
-            Mod.Monitor.Log($"[LVC] {Mod.Helper.Translation.Get("log.info.bot-ready")}", LogLevel.Info);
+            Mod.Monitor.Log($"{Mod.Helper.Translation.Get("log.info.bot-ready")}", LogLevel.Info);
 
             Guild = DiscordClient.GetGuild(Mod.Config.Host.DiscordGuildId);
             if (Guild is null)
             {
-                Mod.Monitor.Log($"[LVC] {Mod.Helper.Translation.Get("log.error.guild-not-found", new { guildId = Mod.Config.Host.DiscordGuildId })}", LogLevel.Error);
+                Mod.Monitor.Log($"{Mod.Helper.Translation.Get("log.error.guild-not-found", new { guildId = Mod.Config.Host.DiscordGuildId })}", LogLevel.Error);
             }
             else
             {
-                Mod.Monitor.Log($"[LVC] {Mod.Helper.Translation.Get("log.info.guild-connected", new { guildName = Guild.Name, guildId = Guild.Id })}", LogLevel.Info);
+                Mod.Monitor.Log($"{Mod.Helper.Translation.Get("log.info.guild-connected", new { guildName = Guild.Name, guildId = Guild.Id })}", LogLevel.Info);
             }
 
             var category = GetCategoryByName(Mod.Config.Bot.VoiceChatsCategoryName);
@@ -55,12 +55,12 @@ namespace LVCMod
             {
                 var newCat = await CreateVoiceChatsCategory();
                 Mod.Config.Bot.VoiceChatsCategoryId = newCat.Id;
-                Mod.Monitor.Log($"[LVC] {Mod.Helper.Translation.Get("log.info.category-created", new { categoryName = newCat.Name, categoryId = newCat.Id })}", LogLevel.Info);
+                Mod.Monitor.Log($"{Mod.Helper.Translation.Get("log.info.category-created", new { categoryName = newCat.Name, categoryId = newCat.Id })}", LogLevel.Info);
             }
             else
             {
                 Mod.Config.Bot.VoiceChatsCategoryId = category.Id;
-                Mod.Monitor.Log($"[LVC] {Mod.Helper.Translation.Get("log.info.category-found", new { categoryName = category.Name, categoryId = category.Id })}", LogLevel.Info);
+                Mod.Monitor.Log($"{Mod.Helper.Translation.Get("log.info.category-found", new { categoryName = category.Name, categoryId = category.Id })}", LogLevel.Info);
             }
 
             var mainChannel = GetVoiceChannelByName(Mod.Config.Bot.MainVoiceChatName);
@@ -68,12 +68,12 @@ namespace LVCMod
             {
                 var newChan = await CreateVoiceChannel(Mod.Config.Bot.MainVoiceChatName, false);
                 Mod.Config.Bot.MainVoiceChatId = newChan.Id;
-                Mod.Monitor.Log($"[LVC] {Mod.Helper.Translation.Get("log.info.main-channel-created", new { channelName = newChan.Name, channelId = newChan.Id })}", LogLevel.Info);
+                Mod.Monitor.Log($"{Mod.Helper.Translation.Get("log.info.main-channel-created", new { channelName = newChan.Name, channelId = newChan.Id })}", LogLevel.Info);
             }
             else
             {
                 Mod.Config.Bot.MainVoiceChatId = mainChannel.Id;
-                Mod.Monitor.Log($"[LVC] {Mod.Helper.Translation.Get("log.info.main-channel-found", new { channelName = mainChannel.Name, channelId = mainChannel.Id })}", LogLevel.Info);
+                Mod.Monitor.Log($"{Mod.Helper.Translation.Get("log.info.main-channel-found", new { channelName = mainChannel.Name, channelId = mainChannel.Id })}", LogLevel.Info);
             }
 
             Mod.Helper.WriteConfig(Mod.Config);
@@ -94,14 +94,14 @@ namespace LVCMod
         {
             try
             {
-                Mod.Monitor.Log($"[LVC] {Mod.Helper.Translation.Get("log.info.bot-starting")}", LogLevel.Info);
+                Mod.Monitor.Log($"{Mod.Helper.Translation.Get("log.info.bot-starting")}", LogLevel.Info);
                 await DiscordClient.LoginAsync(TokenType.Bot, Mod.Config.Bot.Token);
                 await DiscordClient.StartAsync();
-                Mod.Monitor.Log($"[LVC] {Mod.Helper.Translation.Get("log.info.bot-login-complete")}", LogLevel.Info);
+                Mod.Monitor.Log($"{Mod.Helper.Translation.Get("log.info.bot-login-complete")}", LogLevel.Info);
             }
             catch (Exception ex)
             {
-                Mod.Monitor.Log($"[LVC] {Mod.Helper.Translation.Get("log.error.bot-login-failed", new { reason = ex.Message })}", LogLevel.Error);
+                Mod.Monitor.Log($"{Mod.Helper.Translation.Get("log.error.bot-login-failed", new { reason = ex.Message })}", LogLevel.Error);
                 Mod.Monitor.Log(ex.ToString(), LogLevel.Error);
                 IsBotReady.TrySetException(ex);
                 throw;

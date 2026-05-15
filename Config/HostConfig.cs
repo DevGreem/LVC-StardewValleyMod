@@ -6,8 +6,7 @@ namespace LVCMod
     class HostConfig
     {
         public ulong DiscordGuildId { get; set; } = 0;
-        public Dictionary<ulong, PlayerData> SavesData { get; set; } = new();
-
-        public Dictionary<string, ulong> LocationChannels { get; set; } = new();
+        // Per-save data (players and channels) are stored in separate files under data/{saveId}/
+        // This config only keeps host-specific settings such as the guild id.
     }
 }

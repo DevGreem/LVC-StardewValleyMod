@@ -65,7 +65,7 @@ namespace LVCMod
         /// <param name="voiceChannel">Voice Channel To Delete</param>
         /// <param name="beforeCondition">Condition to delete</param>
         /// <returns>Task</returns>
-        public static async Task DeleteVoiceChannel(SocketVoiceChannel voiceChannel, Func<bool>? beforeCondition = null)
+        public static async Task DeleteVoiceChannel(SocketVoiceChannel voiceChannel, Func<bool> beforeCondition = null)
         {
             if (beforeCondition is not null)
             {
@@ -82,9 +82,9 @@ namespace LVCMod
         /// <param name="voiceChannelName">Channel Name to Search</param>
         /// <param name="beforeCondition">Condition</param>
         /// <returns>Task</returns>
-        public async Task DeleteVoiceChannel(string voiceChannelName, Func<bool>? beforeCondition = null)
+        public async Task DeleteVoiceChannel(string voiceChannelName, Func<bool> beforeCondition = null)
         {
-            SocketVoiceChannel? voiceChannel = GetVoiceChannelByName(voiceChannelName);
+            SocketVoiceChannel voiceChannel = GetVoiceChannelByName(voiceChannelName);
 
             if (voiceChannel is null)
                 return;

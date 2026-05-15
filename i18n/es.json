@@ -52,6 +52,7 @@
   "log.error.guild-not-found": "ERROR: Servidor no encontrado. DiscordGuildId={{guildId}}",
   "log.error.move-all-attempts-failed": "CRÍTICO: Todos los intentos de movimiento fallaron para {{userName}}.",
   "log.error.mute-state-failed": "ERROR: Falló el cambio de estado de silencio para {{playerId}}: {{reason}}",
+  "log.error.save-player-data-failed": "ERROR: Error al guardar los datos del jugador: {{reason}}",
 
   "log.info.bot-login-complete": "Proceso de inicio de sesión del bot de Discord completado.",
   "log.info.bot-ready": "Bot de Discord listo, obteniendo servidor y canales...",
@@ -85,9 +86,15 @@
   "log.info.user-already-in-channel": "Info: El usuario ya está en el canal {{channelId}}.",
   "log.info.warp-occurred": "Salto ocurrido: {{oldLocation}} -> {{mergedLocation}}. Canales locales: {{count}}",
 
-  "log.warn.channel-id-zero": "ADVERTENCIA: El ChannelId es 0, no se realizó ningún movimiento.",
   "log.warn.channel-id-missing": "ADVERTENCIA: No se encontró ID de canal para '{{mergedLocation}}'. Volviendo a PlayerWarped.",
+  "log.warn.channel-id-zero": "ADVERTENCIA: El ChannelId es 0, no se realizó ningún movimiento.",
   "log.warn.channel-not-ready": "Canal creado pero Discord no está listo aún, esperando al siguiente salto.",
+  "log.warn.delete-location-channels-failed": "ADVERTENCIA: Error al eliminar los datos de canales de ubicación: {{reason}}",
+  "log.warn.load-save-data-failed": "ADVERTENCIA: Error al cargar los datos de la partida: {{reason}}",
   "log.warn.move-failed-retry": "ERROR (Intento {{attempt}}/{{maxAttempts}}): Fallo al mover a {{userName}}, error de la API de Discord: {{reason}}",
-  "log.warn.user-not-in-voice": "ADVERTENCIA: El usuario {{discordId}} no está en voz o no fue encontrado."
+  "log.warn.persist-joined-player-data-failed": "ADVERTENCIA: Error al persistir los datos del jugador que se unió: {{reason}}",
+  "log.warn.persist-location-channel-mapping-failed": "ADVERTENCIA: Error al persistir el mapeo de canales de ubicación: {{reason}}",
+  "log.warn.reset-users-state-failed": "ADVERTENCIA: Error al restablecer el estado de usuarios desde los datos de la partida: {{reason}}",
+  "log.warn.user-not-in-voice": "ADVERTENCIA: El usuario {{discordId}} no está en voz o no fue encontrado.",
+  "log.warn.write-location-channels-failed": "ADVERTENCIA: Error al escribir los canales de ubicación en los datos de la partida: {{reason}}"
 }

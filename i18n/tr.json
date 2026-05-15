@@ -52,6 +52,7 @@
   "log.error.guild-not-found": "HATA: Sunucu bulunamadı. DiscordGuildId={{guildId}}",
   "log.error.move-all-attempts-failed": "KRİTİK: {{userName}} için tüm taşıma denemeleri başarısız oldu.",
   "log.error.mute-state-failed": "HATA: {{playerId}} için susturma durumu değişikliği başarısız: {{reason}}",
+  "log.error.save-player-data-failed": "HATA: Oyuncu verileri kaydedilirken hata oluştu: {{reason}}",
 
   "log.info.bot-login-complete": "Discord botu giriş işlemi tamamlandı.",
   "log.info.bot-ready": "Discord botu hazır, sunucu ve kanallar alınıyor...",
@@ -85,9 +86,15 @@
   "log.info.user-already-in-channel": "Bilgi: Kullanıcı zaten {{channelId}} kanalında.",
   "log.info.warp-occurred": "Işınlanma gerçekleşti: {{oldLocation}} -> {{mergedLocation}}. Yerel Kanallar: {{count}}",
 
-  "log.warn.channel-id-zero": "UYARI: KanalID 0, taşıma işlemi gerçekleştirilmedi.",
   "log.warn.channel-id-missing": "UYARI: '{{mergedLocation}}' için kanal ID bulunamadı. PlayerWarped'e geri dönülüyor.",
+  "log.warn.channel-id-zero": "UYARI: KanalID 0, taşıma işlemi gerçekleştirilmedi.",
   "log.warn.channel-not-ready": "Kanal oluşturuldu ancak Discord henüz hazır değil, bir sonraki ışınlanma bekleniyor.",
+  "log.warn.delete-location-channels-failed": "UYARI: Konum kanalları verisi silinirken hata oluştu: {{reason}}",
+  "log.warn.load-save-data-failed": "UYARI: Kaydedilmiş veriler yüklenirken hata oluştu: {{reason}}",
   "log.warn.move-failed-retry": "HATA (Deneme {{attempt}}/{{maxAttempts}}): {{userName}} taşınamadı, Discord API hatası: {{reason}}",
-  "log.warn.user-not-in-voice": "UYARI: {{discordId}} kullanıcısı seste değil veya bulunamadı."
+  "log.warn.persist-joined-player-data-failed": "UYARI: Katılan oyuncu verileri saklanırken hata oluştu: {{reason}}",
+  "log.warn.persist-location-channel-mapping-failed": "UYARI: Konum kanal eşlemesi saklanırken hata oluştu: {{reason}}",
+  "log.warn.reset-users-state-failed": "UYARI: Kaydedilmiş verilerden kullanıcı durumları sıfırlanırken hata oluştu: {{reason}}",
+  "log.warn.user-not-in-voice": "UYARI: {{discordId}} kullanıcısı seste değil veya bulunamadı.",
+  "log.warn.write-location-channels-failed": "UYARI: Konum kanalları kaydedilirken hata oluştu: {{reason}}"
 }

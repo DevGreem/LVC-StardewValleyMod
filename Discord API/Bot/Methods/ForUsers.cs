@@ -25,12 +25,12 @@ namespace LVCMod
 
             if (discordId == 0)
             {
-                Mod.Monitor.Log($"[LVC] {Mod.Helper.Translation.Get("log.error.discord-id-not-found", new { playerId })}", LogLevel.Error);
+                Mod.Monitor.Log($"{Mod.Helper.Translation.Get("log.error.discord-id-not-found", new { playerId })}", LogLevel.Error);
                 return;
             }
 
             string mergedLocation = MergeLocations(newLocation, team);
-            Mod.Monitor.Log($"[LVC] {Mod.Helper.Translation.Get("log.info.moving-player", new { playerId, team, target = mergedLocation })}", LogLevel.Info);
+            Mod.Monitor.Log($"{Mod.Helper.Translation.Get("log.info.moving-player", new { playerId, team, target = mergedLocation })}", LogLevel.Info);
 
             await MoveToVoice(discordId, mergedLocation);
         }
@@ -41,17 +41,17 @@ namespace LVCMod
         /// <param name="discordId">Discord user ID</param>
         /// <param name="newLocation">New location name</param>
         /// <returns>Task</returns>
-        public async Task MoveToVoice(ulong discordId, string? newLocation)
+        public async Task MoveToVoice(ulong discordId, string newLocation)
         {
             if (string.IsNullOrEmpty(newLocation)) return;
 
-            SocketGuildUser? user = Guild.GetUser(discordId);
+            SocketGuildUser user = Guild.GetUser(discordId);
             // 1. Don't touch if user is not in voice
             if (user?.VoiceChannel is null) return;
 
-            // 2. CRITICAL CHECK: Check if user's current channel is one of our config IDs
+            // 2. CRITICAL CHECK: Check if user's current channel is one of our stored location channels
             // If the user's current channel ID is not in our LocationChannels list and not the Main Channel ID, don't interfere
-            bool isUserInModChannel = Mod.Config.Host.LocationChannels.Values.Contains(user.VoiceChannel.Id)
+            bool isUserInModChannel = Mod.LocationChannelsCache.Values.Contains(user.VoiceChannel.Id)
                                       || user.VoiceChannel.Id == Mod.Config.Bot.MainVoiceChatId;
 
             if (!isUserInModChannel)
@@ -62,16 +62,16 @@ namespace LVCMod
             // 3. Don't touch if already in target channel
             if (user.VoiceChannel.Name == newLocation) return;
 
-            SocketVoiceChannel? voiceChannel = GetVoiceChannelByName(newLocation);
+            SocketVoiceChannel voiceChannel = GetVoiceChannelByName(newLocation);
 
             if (voiceChannel is null)
             {
-                Mod.Monitor.Log($"[LVC] {Mod.Helper.Translation.Get("log.info.creating-channel", new { location = newLocation })}", StardewModdingAPI.LogLevel.Info);
+                Mod.Monitor.Log($"{Mod.Helper.Translation.Get("log.info.creating-channel", new { location = newLocation })}", StardewModdingAPI.LogLevel.Info);
                 var restChannel = await CreateVoiceChannel(newLocation);
 
                 // Save ID immediately
-                Mod.Config.Host.LocationChannels[newLocation] = restChannel.Id;
-                Mod.Helper.WriteConfig(Mod.Config);
+                Mod.LocationChannelsCache[newLocation] = restChannel.Id;
+                Mod.WritePerSaveFile("channels.json", Mod.LocationChannelsCache);
                 Mod.BroadcastLocationChannels();
 
                 // CRITICAL FIX: Wait a short time for Discord to recognize the channel
@@ -81,7 +81,7 @@ namespace LVCMod
 
                 if (voiceChannel == null)
                 {
-                    Mod.Monitor.Log($"[LVC] {Mod.Helper.Translation.Get("log.warn.channel-not-ready")}", StardewModdingAPI.LogLevel.Warn);
+                    Mod.Monitor.Log($"{Mod.Helper.Translation.Get("log.warn.channel-not-ready")}", StardewModdingAPI.LogLevel.Warn);
                     return;
                 }
             }
@@ -98,17 +98,17 @@ namespace LVCMod
                         // Short wait to relax Discord API
                         await Task.Delay(250 + (retryCount * 500)); // Longer wait for each retry
                         await user.ModifyAsync(x => x.Channel = voiceChannel);
-                        Mod.Monitor.Log($"[LVC] {Mod.Helper.Translation.Get("log.info.move-success", new { userName = user.Username, location = newLocation })}", StardewModdingAPI.LogLevel.Info);
+                        Mod.Monitor.Log($"{Mod.Helper.Translation.Get("log.info.move-success", new { userName = user.Username, location = newLocation })}", StardewModdingAPI.LogLevel.Info);
                         return; // Exit if successful
                     }
                     catch (Exception ex)
                     {
                         retryCount++;
-                        Mod.Monitor.Log($"[LVC] {Mod.Helper.Translation.Get("log.warn.move-failed-retry", new { attempt = retryCount, maxAttempts = maxRetries, userName = user.Username, reason = ex.Message })}", StardewModdingAPI.LogLevel.Warn);
+                        Mod.Monitor.Log($"{Mod.Helper.Translation.Get("log.warn.move-failed-retry", new { attempt = retryCount, maxAttempts = maxRetries, userName = user.Username, reason = ex.Message })}", StardewModdingAPI.LogLevel.Warn);
 
                         if (retryCount >= maxRetries)
                         {
-                            Mod.Monitor.Log($"[LVC] {Mod.Helper.Translation.Get("log.error.move-all-attempts-failed", new { userName = user.Username })}", StardewModdingAPI.LogLevel.Error);
+                            Mod.Monitor.Log($"{Mod.Helper.Translation.Get("log.error.move-all-attempts-failed", new { userName = user.Username })}", StardewModdingAPI.LogLevel.Error);
                         }
                         else
                         {
@@ -128,31 +128,31 @@ namespace LVCMod
         /// <returns>Task</returns>
         public async Task MoveToVoice(ulong discordId, ulong channelId)
         {
-            Mod.Monitor.Log($"[LVC] {Mod.Helper.Translation.Get("log.info.move-channel-id", new { discordId, channelId })}", LogLevel.Info);
+            Mod.Monitor.Log($"{Mod.Helper.Translation.Get("log.info.move-channel-id", new { discordId, channelId })}", LogLevel.Info);
 
             if (channelId == 0)
             {
-                Mod.Monitor.Log($"[LVC] {Mod.Helper.Translation.Get("log.warn.channel-id-zero")}", LogLevel.Warn);
+                Mod.Monitor.Log($"{Mod.Helper.Translation.Get("log.warn.channel-id-zero")}", LogLevel.Warn);
                 return;
             }
 
-            SocketGuildUser? user = Guild.GetUser(discordId);
+            SocketGuildUser user = Guild.GetUser(discordId);
             if (user?.VoiceChannel is null)
             {
-                Mod.Monitor.Log($"[LVC] {Mod.Helper.Translation.Get("log.warn.user-not-in-voice", new { discordId })}", LogLevel.Warn);
+                Mod.Monitor.Log($"{Mod.Helper.Translation.Get("log.warn.user-not-in-voice", new { discordId })}", LogLevel.Warn);
                 return;
             }
 
             if (user.VoiceChannel.Id == channelId)
             {
-                Mod.Monitor.Log($"[LVC] {Mod.Helper.Translation.Get("log.info.user-already-in-channel", new { channelId })}", LogLevel.Info);
+                Mod.Monitor.Log($"{Mod.Helper.Translation.Get("log.info.user-already-in-channel", new { channelId })}", LogLevel.Info);
                 return;
             }
 
-            SocketVoiceChannel? voiceChannel = Guild.GetVoiceChannel(channelId);
+            SocketVoiceChannel voiceChannel = Guild.GetVoiceChannel(channelId);
             if (voiceChannel is null)
             {
-                Mod.Monitor.Log($"[LVC] {Mod.Helper.Translation.Get("log.error.channel-not-found", new { channelId })}", LogLevel.Error);
+                Mod.Monitor.Log($"{Mod.Helper.Translation.Get("log.error.channel-not-found", new { channelId })}", LogLevel.Error);
                 return;
             }
 
@@ -167,17 +167,17 @@ namespace LVCMod
                     {
                         await Task.Delay(250 + (retryCount * 500));
                         await user.ModifyAsync(x => x.Channel = voiceChannel);
-                        Mod.Monitor.Log($"[LVC] {Mod.Helper.Translation.Get("log.info.move-success", new { userName = user.Username, location = voiceChannel.Name })}", StardewModdingAPI.LogLevel.Info);
+                        Mod.Monitor.Log($"{Mod.Helper.Translation.Get("log.info.move-success", new { userName = user.Username, location = voiceChannel.Name })}", StardewModdingAPI.LogLevel.Info);
                         return;
                     }
                     catch (Exception ex)
                     {
                         retryCount++;
-                        Mod.Monitor.Log($"[LVC] {Mod.Helper.Translation.Get("log.warn.move-failed-retry", new { attempt = retryCount, maxAttempts = maxRetries, userName = user.Username, reason = ex.Message })}", StardewModdingAPI.LogLevel.Warn);
+                        Mod.Monitor.Log($"{Mod.Helper.Translation.Get("log.warn.move-failed-retry", new { attempt = retryCount, maxAttempts = maxRetries, userName = user.Username, reason = ex.Message })}", StardewModdingAPI.LogLevel.Warn);
 
                         if (retryCount >= maxRetries)
                         {
-                            Mod.Monitor.Log($"[LVC] {Mod.Helper.Translation.Get("log.error.move-all-attempts-failed", new { userName = user.Username })}", StardewModdingAPI.LogLevel.Error);
+                            Mod.Monitor.Log($"{Mod.Helper.Translation.Get("log.error.move-all-attempts-failed", new { userName = user.Username })}", StardewModdingAPI.LogLevel.Error);
                         }
                         else
                         {
@@ -188,7 +188,7 @@ namespace LVCMod
             }
             catch (Exception ex)
             {
-                Mod.Monitor.Log($"[LVC] {Mod.Helper.Translation.Get("log.error.general-move-error", new { userName = user.Username, reason = ex.Message })}", StardewModdingAPI.LogLevel.Error);
+                Mod.Monitor.Log($"{Mod.Helper.Translation.Get("log.error.general-move-error", new { userName = user.Username, reason = ex.Message })}", StardewModdingAPI.LogLevel.Error);
             }
         }
 
@@ -232,7 +232,7 @@ namespace LVCMod
         /// <returns>Task</returns>
         public async Task MuteUser(ulong userId)
         {
-            SocketGuildUser? user = Guild.GetUser(userId);
+            SocketGuildUser user = Guild.GetUser(userId);
 
             if (user is null)
                 return;
@@ -257,7 +257,7 @@ namespace LVCMod
         /// <returns>Task</returns>
         public async Task UnmuteUser(ulong userId)
         {
-            SocketGuildUser? user = Guild.GetUser(userId);
+            SocketGuildUser user = Guild.GetUser(userId);
 
             if (user is null)
                 return;
@@ -288,18 +288,18 @@ namespace LVCMod
             {
                 if (state)
                 {
-                    Mod.Monitor.Log($"[LVC] {Mod.Helper.Translation.Get("log.info.muting-user", new { playerId })}", LogLevel.Info);
+                    Mod.Monitor.Log($"{Mod.Helper.Translation.Get("log.info.muting-user", new { playerId })}", LogLevel.Info);
                     await MuteUser(playerId);
                 }
                 else
                 {
-                    Mod.Monitor.Log($"[LVC] {Mod.Helper.Translation.Get("log.info.unmuting-user", new { playerId })}", LogLevel.Info);
+                    Mod.Monitor.Log($"{Mod.Helper.Translation.Get("log.info.unmuting-user", new { playerId })}", LogLevel.Info);
                     await UnmuteUser(playerId);
                 }
             }
             catch (Exception ex)
             {
-                Mod.Monitor.Log($"[LVC] {Mod.Helper.Translation.Get("log.error.mute-state-failed", new { playerId, reason = ex.Message })}", LogLevel.Error);
+                Mod.Monitor.Log($"{Mod.Helper.Translation.Get("log.error.mute-state-failed", new { playerId, reason = ex.Message })}", LogLevel.Error);
             }
         }
 
@@ -320,7 +320,7 @@ namespace LVCMod
         /// <returns>Task</returns>
         public async Task DeafUser(ulong userId)
         {
-            SocketGuildUser? user = Guild.GetUser(userId);
+            SocketGuildUser user = Guild.GetUser(userId);
 
             if (user is null)
                 return;
@@ -345,7 +345,7 @@ namespace LVCMod
         /// <returns>Task</returns>
         public async Task UndeafUser(ulong userId)
         {
-            SocketGuildUser? user = Guild.GetUser(userId);
+            SocketGuildUser user = Guild.GetUser(userId);
 
             if (user is null)
                 return;
@@ -376,18 +376,18 @@ namespace LVCMod
             {
                 if (state)
                 {
-                    Mod.Monitor.Log($"[LVC] {Mod.Helper.Translation.Get("log.info.deafening-user", new { playerId })}", LogLevel.Info);
+                    Mod.Monitor.Log($"{Mod.Helper.Translation.Get("log.info.deafening-user", new { playerId })}", LogLevel.Info);
                     await DeafUser(playerId);
                 }
                 else
                 {
-                    Mod.Monitor.Log($"[LVC] {Mod.Helper.Translation.Get("log.info.undeafening-user", new { playerId })}", LogLevel.Info);
+                    Mod.Monitor.Log($"{Mod.Helper.Translation.Get("log.info.undeafening-user", new { playerId })}", LogLevel.Info);
                     await UndeafUser(playerId);
                 }
             }
             catch (Exception ex)
             {
-                Mod.Monitor.Log($"[LVC] {Mod.Helper.Translation.Get("log.error.deaf-state-failed", new { playerId, reason = ex.Message })}", LogLevel.Error);
+                Mod.Monitor.Log($"{Mod.Helper.Translation.Get("log.error.deaf-state-failed", new { playerId, reason = ex.Message })}", LogLevel.Error);
             }
         }
 
@@ -422,10 +422,21 @@ namespace LVCMod
         /// <returns>Task</returns>
         public async Task ResetUsersState()
         {
-            foreach (var playerInfo in Mod.Config.Host.SavesData[Game1.uniqueIDForThisGame].Players)
+            try
             {
-                _ = UnmuteUser(playerInfo.Value.DiscordId);
-                _ = UndeafUser(playerInfo.Value.DiscordId);
+                var savedPlayers = Mod.PlayerDataCache;
+                if (savedPlayers == null)
+                    return;
+
+                foreach (var playerInfo in savedPlayers.Players)
+                {
+                    _ = UnmuteUser(playerInfo.Value.DiscordId);
+                    _ = UndeafUser(playerInfo.Value.DiscordId);
+                }
+            }
+            catch (Exception ex)
+            {
+                Mod.Monitor.Log($"{Mod.Helper.Translation.Get("log.warn.reset-users-state-failed", new { reason = ex.Message })}", LogLevel.Warn);
             }
         }
     }

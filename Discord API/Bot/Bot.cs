@@ -31,7 +31,7 @@ namespace LVCMod
             {
                 if (t.IsFaulted)
                 {
-                    Mod.Monitor.Log($"[LVC] {Mod.Helper.Translation.Get("log.error.bot-login-failed", new { reason = t.Exception?.Flatten().Message })}", LogLevel.Error);
+                    Mod.Monitor.Log($"{Mod.Helper.Translation.Get("log.error.bot-login-failed", new { reason = t.Exception?.Flatten().Message })}", LogLevel.Error);
                     if (t.Exception != null)
                     {
                         foreach (var ex in t.Exception.Flatten().InnerExceptions)

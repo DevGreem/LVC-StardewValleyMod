@@ -9,17 +9,14 @@ namespace LVCMod
     {
         private IGenericModConfigMenuApi GCMApi;
 
-        private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
+        private void OnGameLaunched(object sender, GameLaunchedEventArgs e)
         {
             GCMApi = Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
             Config = Helper.ReadConfig<ModConfig>();
 
             if (GCMApi is null)
             {
-                Monitor.Log(
-                    Helper.Translation.Get("no-gmcm-installed.warning"),
-                    LogLevel.Warn
-                );
+                Monitor.Log($"{Helper.Translation.Get("no-gmcm-installed.warning")}", LogLevel.Warn);
                 return;
             }
 
@@ -81,38 +78,20 @@ namespace LVCMod
                 ModManifest,
                 pageId: "voice-chat",
                 text: () => Helper.Translation.Get("voice-chat.gmcm.title"),
-                tooltip : () => Helper.Translation.Get("voice-chat.gmcm.tooltip")
+                tooltip : () => Helper.Translation.Get("voice-chat.bindings.title")
             );
 
             // --- VOICE CHAT SETTINGS ---
+
             GCMApi.AddPage(
                 ModManifest,
                 pageId: "voice-chat",
-                pageTitle: () => Helper.Translation.Get("voice-chat.gmcm.title")
+                pageTitle: () => Helper.Translation.Get("voice-chat.bindings.title")
             );
 
-            GCMApi.AddBoolOption(
-                ModManifest,
-                name: () => Helper.Translation.Get("voice-chat.microphone.label"),
-                tooltip: () => Helper.Translation.Get("voice-chat.microphone.tooltip"),
-                getValue: () => Config.User.Muted,
-                setValue: value => Config.User.Muted = value
-            );
-
-            GCMApi.AddBoolOption(
-                ModManifest,
-                name: () => Helper.Translation.Get("voice-chat.deafer.label"),
-                tooltip: () => Helper.Translation.Get("voice-chat.deafer.tooltip"),
-                getValue: () => Config.User.Deafen,
-                setValue: value => Config.User.Deafen = value
-            );
+            // Mute/Deafen flags are now stored per-save in players.json; UI for these flags is removed from GMCM.
 
             // Key Bindings
-            GCMApi.AddSectionTitle(
-                ModManifest,
-                text: () => Helper.Translation.Get("voice-chat.bindings.title")
-            );
-
             GCMApi.AddBoolOption(
                 ModManifest,
                 name: () => Helper.Translation.Get("voice-chat.bindings.enabled.label"),
@@ -168,8 +147,8 @@ namespace LVCMod
             GCMApi.AddTextOption(
                 ModManifest,
                 name: () => Helper.Translation.Get("host.voice-chat-category-id.label"),
-                tooltip: () => Config.User.DiscordId.ToString(),
-                getValue: () => Config.User.DiscordId.ToString(),
+                tooltip: () => Config.Bot.VoiceChatsCategoryId.ToString(),
+                getValue: () => Config.Bot.VoiceChatsCategoryId.ToString(),
                 setValue: value =>
                 {
                     if (ulong.TryParse(value, out ulong id))
@@ -190,8 +169,8 @@ namespace LVCMod
             GCMApi.AddTextOption(
                 ModManifest,
                 name: () => Helper.Translation.Get("host.voice-chat-channel-id.label"),
-                tooltip: () => Config.User.DiscordId.ToString(),
-                getValue: () => Config.User.DiscordId.ToString(),
+                tooltip: () => Config.Bot.MainVoiceChatId.ToString(),
+                getValue: () => Config.Bot.MainVoiceChatId.ToString(),
                 setValue: value =>
                 {
                     if (ulong.TryParse(value, out ulong id))

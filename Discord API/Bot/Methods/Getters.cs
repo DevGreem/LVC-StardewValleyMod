@@ -17,21 +17,32 @@ namespace LVCMod
         /// <returns>ulong</returns>
         private ulong GetDiscordFarmerId(long farmerId)
         {
-            if (Mod.Config.Host.SavesData.TryGetValue(Game1.uniqueIDForThisGame, out var data))
+            try
             {
-                if (data.Players.TryGetValue(farmerId, out var info))
+                var savedPlayers = Mod.PlayerDataCache;
+                if (savedPlayers != null && savedPlayers.Players.TryGetValue(farmerId, out var info))
                     return info.DiscordId;
+            }
+            catch (Exception)
+            {
+                // ignore and fallthrough
             }
             return 0;
         }
 
         private string GetFarmerTeam(long farmerId)
         {
-            if (Mod.Config.Host.SavesData.TryGetValue(Game1.uniqueIDForThisGame, out var data))
+            try
             {
-                if (data.Players.TryGetValue(farmerId, out var info))
+                var savedPlayers = Mod.PlayerDataCache;
+                if (savedPlayers != null && savedPlayers.Players.TryGetValue(farmerId, out var info))
                     return info.Team;
             }
+            catch (Exception)
+            {
+                // ignore and fallthrough
+            }
+
             return "None";
         }
 
@@ -40,10 +51,10 @@ namespace LVCMod
         /// </summary>
         /// <param name="channelName">Channel Name</param>
         /// <returns>SocketVoiceChannel</returns>
-        private SocketVoiceChannel? GetVoiceChannelByName(string channelName)
+        private SocketVoiceChannel GetVoiceChannelByName(string channelName)
         {
             // look at the dictionary in the cache
-            if (Mod.Config.Host.LocationChannels.TryGetValue(channelName, out ulong id))
+            if (Mod.LocationChannelsCache.TryGetValue(channelName, out ulong id))
             {
                 var ch = Guild.GetVoiceChannel(id);
                 if (ch != null) return ch;
@@ -55,12 +66,20 @@ namespace LVCMod
             if (foundChannel != null)
             {
                 // Save ONLY if this name is not in the dictionary or the ID is different
-                if (!Mod.Config.Host.LocationChannels.ContainsKey(channelName) || Mod.Config.Host.LocationChannels[channelName] != foundChannel.Id)
+                if (!Mod.LocationChannelsCache.ContainsKey(channelName) || Mod.LocationChannelsCache[channelName] != foundChannel.Id)
                 {
-                    Mod.Config.Host.LocationChannels[channelName] = foundChannel.Id;
-                    Mod.Helper.WriteConfig(Mod.Config);
+                    Mod.LocationChannelsCache[channelName] = foundChannel.Id;
+                    // persist to channels.json
+                    try
+                    {
+                        Mod.WritePerSaveFile("channels.json", Mod.LocationChannelsCache);
+                    }
+                    catch (Exception ex)
+                    {
+                        Mod.Monitor.Log($"{Mod.Helper.Translation.Get("log.warn.persist-location-channel-mapping-failed", new { reason = ex.Message })}", StardewModdingAPI.LogLevel.Warn);
+                    }
                     Mod.BroadcastLocationChannels();
-                    Mod.Monitor.Log($"[LVC] {Mod.Helper.Translation.Get("log.info.channel-registered", new { channelName, channelId = foundChannel.Id })}", StardewModdingAPI.LogLevel.Info);
+                    Mod.Monitor.Log($"{Mod.Helper.Translation.Get("log.info.channel-registered", new { channelName, channelId = foundChannel.Id })}", StardewModdingAPI.LogLevel.Info);
                 }
             }
 
@@ -72,7 +91,7 @@ namespace LVCMod
         /// </summary>
         /// <param name="categoryName">Category Name</param>
         /// <returns>SocketCategoryChannel</returns>
-        private SocketCategoryChannel? GetCategoryByName(string categoryName)
+        private SocketCategoryChannel GetCategoryByName(string categoryName)
         {
             if (Mod.Config.Bot.VoiceChatsCategoryId != 0)
             {
