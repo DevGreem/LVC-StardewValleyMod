@@ -7,12 +7,14 @@ namespace LVCMod
     {
         public ulong DiscordId { get; set; } = 0;
 
-        public bool MicrophoneActivated { get; set; } = true;
+        public string Team { get; set; } = "None"; // None, Blue, Red, Green, Yellow
 
-        public bool DeaferDesactivated { get; set; } = true;
+        // Muted and Deafen are now stored per-save in players.json
 
-        public SButton ChangeStateMicrophone { get; set; } = SButton.H;
+        public bool EnableVoiceHotkeys { get; set; } = true;
 
-        public SButton ChangeStateAudio { get; set; } = SButton.J;
+        public SButton ChangeStateMute { get; set; } = SButton.H;
+
+        public SButton ChangeStateDeaf { get; set; } = SButton.J;
     }
 }
